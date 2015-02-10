@@ -295,6 +295,22 @@ class SyntaxTestCase(JinjaTestCase):
         tmpl = env.from_string('{{ (true and false) or (false and true) and not false }}')
         assert tmpl.render() == 'False'
 
+    def test_custom_tests(self):
+        env = Environment()
+        env.tests['more_than'] = lambda x, y: x > y
+        tmpl = env.from_string("{{ foo is more_than 1}}")
+        assert tmpl.render(foo=2) == 'True'
+        assert tmpl.render(foo=0) == 'False'
+        tmpl = env.from_string("{{ foo == 1 or bar is more_than 1 }}")
+        assert tmpl.render(foo=0, bar=2) == 'True'
+        assert tmpl.render(foo=1, bar=1) == 'True'
+        assert tmpl.render(foo=0, bar=1) == 'False'
+
+        # TODO(sekimura): FIX THIS
+        tmpl = env.from_string("{{ foo is more_than 1 or bar is more_than 1 }}")
+        assert tmpl.render(foo=0, bar=2) == 'True'
+        assert tmpl.render(foo=1, bar=1) == 'False'
+
     def test_django_attr(self):
         tmpl = env.from_string('{{ [1, 2, 3].0 }}|{{ [[1]].0.0 }}')
         assert tmpl.render() == '1|1'
